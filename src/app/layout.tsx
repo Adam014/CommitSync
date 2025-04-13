@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CommitSync",
-  description: "Sync your commit history from Github and Gitlab",
+  title: "commit-sync",
+  description:
+    "Sync your commit history from Github and Gitlab to a commit graph.",
 };
 
 export default function RootLayout({
