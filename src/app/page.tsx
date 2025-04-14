@@ -4,6 +4,18 @@ import Heatmap from "@/components/Heatmap";
 import { format } from "date-fns";
 import { getColor } from "@/stores/utils";
 
+interface GitHubCommit {
+  commit: {
+    author: {
+      date: string;
+    };
+  };
+}
+
+interface GitLabCommit {
+  created_at: string;
+}
+
 export default function Home() {
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
@@ -43,7 +55,7 @@ export default function Home() {
         }
       );
       const ghData = await ghRes.json();
-      (ghData.items || []).forEach((commit: any) => {
+      (ghData.items || []).forEach((commit: GitHubCommit) => {
         const commitDate = new Date(commit.commit.author.date);
         const dateKey = format(commitDate, "yyyy-MM-dd");
         if (dateKey in eventsAggregate) {
@@ -77,7 +89,7 @@ export default function Home() {
                 { headers: { "Private-Token": gitlabToken } }
               );
               const glCommits = await glCommitsRes.json();
-              (glCommits || []).forEach((commit: any) => {
+              (glCommits || []).forEach((commit: GitLabCommit) => {
                 const commitDate = new Date(commit.created_at);
                 const dateKey = format(commitDate, "yyyy-MM-dd");
                 if (dateKey in eventsAggregate) {
@@ -102,9 +114,8 @@ export default function Home() {
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setDarkMode(true);
     }
-    // Listen for dark/light mode changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const darkModeHandler = (e) => setDarkMode(e.matches);
+    const darkModeHandler = (e: MediaQueryListEvent) => setDarkMode(e.matches);
     mediaQuery.addEventListener("change", darkModeHandler);
     const params = new URLSearchParams(window.location.search);
     setIsEmbed(params.get("embed") === "true");
@@ -185,20 +196,23 @@ export default function Home() {
       <button onClick={() => setDarkMode(prev => !prev)} className="absolute top-2 left-2 py-2 px-3 rounded cursor-pointer">
         {darkMode ? "☀️" : "🌙"}
       </button>
-      <div>
+      <div className="p-8">
         <h1 className="p-12 text-2xl">Welcome internet explorer</h1>
         <p className="pl-12">
           In a realm where code is alchemy, this project conjures an enigmatic tapestry—merging the secret whispers
           of GitHub and GitLab into one mystical graph. It anonymously unveils the hidden rhythm of your commit magic,
           displaying every creation, deletion, comment, and push across the current month.
         </p>
-        <div className="ml-12 mb-6">
-          <form onSubmit={(e) => {
+        <div className="ml-12">
+          <form
+            onSubmit={(e) => {
               e.preventDefault();
               fetchEvents();
               setAutoSyncEnabled(true);
               updateEmbedCode();
-            }} className="space-y-4 mt-8">
+            }}
+            className="space-y-4 mt-8"
+          >
             <div>
               <label htmlFor="github" className="block mb-1">GitHub Username</label>
               <input
@@ -227,7 +241,7 @@ export default function Home() {
           </form>
         </div>
       </div>
-      <div>
+      <div className="ml-8">
         {/* <div className="mb-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium">{currentMonthYear}</span>
@@ -242,9 +256,16 @@ export default function Home() {
           </div>
         </div>
         <Heatmap dayCounts={dayCounts} darkMode={darkMode} /> */}
-        <div className="ml-12">
+        <div className="ml-12 mt-6">
           <h2 className="text-xl mb-2">Embed This Heatmap</h2>
-          <iframe srcDoc={embedCode} width="100%" height="300" style={{ border: "none", overflow: "hidden", background: "transparent" }} scrolling="no" title="Embed Heatmap" />
+          <iframe
+            srcDoc={embedCode}
+            width="100%"
+            height="300"
+            style={{ border: "none", overflow: "hidden", background: "transparent" }}
+            scrolling="no"
+            title="Embed Heatmap"
+          />
           <button onClick={handleCopy} className="mt-2 bg-green-500 text-white py-2 px-4 rounded cursor-pointer">
             Copy Embed Code
           </button>
