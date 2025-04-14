@@ -177,7 +177,7 @@ export default function Home() {
                 value={gitHubUsername}
                 onChange={(e) => setGitHubUsername(e.target.value)}
                 placeholder="Enter your GitHub username"
-                className="p-2 border border-gray-300 rounded"
+                className="p-2 border border-gray-300 rounded w-1/3"
               />
             </div>
             <div>
@@ -190,7 +190,7 @@ export default function Home() {
                 value={gitLabUsername}
                 onChange={(e) => setGitLabUsername(e.target.value)}
                 placeholder="Enter your GitLab username"
-                className="p-2 border border-gray-300 rounded"
+                className="p-2 border border-gray-300 rounded w-1/3"
               />
             </div>
             <button
