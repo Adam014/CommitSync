@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { format } from "date-fns";
 import { getColor } from "@/stores/utils"; // <-- Reuse your existing color logic
+import { GitHubCommit, GitLabCommit } from "@/types/types";
 
 // Use the same thresholds as in your page.tsx or Heatmap.tsx
 const legendCounts = [0, 1, 3, 6, 10];
@@ -49,7 +50,7 @@ async function fetchEvents(
         }
       );
       const ghData = await ghRes.json();
-      (ghData.items || []).forEach((commit: any) => {
+      (ghData.items || []).forEach((commit: GitHubCommit) => {
         const commitDate = new Date(commit.commit.author.date);
         const dateKey = format(commitDate, "yyyy-MM-dd");
         if (dateKey in eventsAggregate) {
@@ -79,7 +80,7 @@ async function fetchEvents(
           { headers: { "Private-Token": gitlabToken } }
         );
         const glEvents = await glEventsRes.json();
-        (glEvents || []).forEach((event: any) => {
+        (glEvents || []).forEach((event: GitLabCommit) => {
           const eventDate = new Date(event.created_at);
           if (
             eventDate.getFullYear() === currentYear &&
