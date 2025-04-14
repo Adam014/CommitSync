@@ -148,7 +148,7 @@ export default function Home() {
       >
         {darkMode ? "☀️" : "🌙"}
       </button>
-      <div className="p-8">
+      <div className="p-8 content">
         <h1 className="p-12 text-2xl">Welcome internet explorer</h1>
         <p className="pl-12">
           In a realm where code is alchemy, this project conjures an enigmatic
@@ -158,7 +158,7 @@ export default function Home() {
           It anonymously unveils the hidden rhythm of your commit magic, a silent
           incantation echoing through the digital ether.
         </p>
-        <div className="ml-12 mb-6">
+        <div className="ml-12 mb-6 form-container">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -177,7 +177,7 @@ export default function Home() {
                 value={gitHubUsername}
                 onChange={(e) => setGitHubUsername(e.target.value)}
                 placeholder="Enter your GitHub username"
-                className="p-2 border border-gray-300 rounded w-1/3"
+                className="p-2 border border-gray-300 rounded w-1/3 username"
               />
             </div>
             <div>
@@ -190,7 +190,7 @@ export default function Home() {
                 value={gitLabUsername}
                 onChange={(e) => setGitLabUsername(e.target.value)}
                 placeholder="Enter your GitLab username"
-                className="p-2 border border-gray-300 rounded w-1/3"
+                className="p-2 border border-gray-300 rounded w-1/3 username"
               />
             </div>
             <button

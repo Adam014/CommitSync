@@ -28,3 +28,26 @@
   --background: #0a0a0a;
   --foreground: #ededed;
 }
+
+@media screen and (max-width: 768px) {
+    .content{
+      padding: 0px;
+    }
+
+    .content h1{
+      padding: 90px 0px 30px 30px;
+    }
+
+    .content p{
+      padding-left: 30px;
+      width: 90%;
+    }
+
+    .content .form-container{
+      margin-left: 30px;
+    }
+
+    .form-container .username{
+      width: 90% !important; 
+    }
+}
