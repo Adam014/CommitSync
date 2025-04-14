@@ -1,107 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  format,
-  startOfMonth,
-  getDaysInMonth,
-} from "date-fns";
-import {
-  CommitEvent,
-  GitHubCommit,
-  GitHubEvent,
-  GitLabEvent,
-} from "@/types/types";
-
-interface HeatmapProps {
-  dayCounts: Record<string, number>;
-  darkMode: boolean;
-}
-
-const Heatmap: React.FC<HeatmapProps> = ({ dayCounts, darkMode }) => {
-  const today = new Date();
-  const startMonth = startOfMonth(today);
-  const daysInMonth = getDaysInMonth(today);
-  const startWeekday = startMonth.getDay();
-
-  // Calculate how many cells and weeks are needed.
-  const totalCells = startWeekday + daysInMonth;
-  const weeks = Math.ceil(totalCells / 7);
-
-  let dayCounter = 1;
-  const grid: JSX.Element[] = [];
-
-  for (let week = 0; week < weeks; week++) {
-    const weekCells = [];
-    for (let day = 0; day < 7; day++) {
-      const cellIndex = week * 7 + day;
-      if (cellIndex < startWeekday || dayCounter > daysInMonth) {
-        weekCells.push(
-          <div
-            key={`empty-${cellIndex}`}
-            style={{
-              width: "30px",
-              height: "30px",
-              margin: "2px",
-              backgroundColor: "transparent",
-            }}
-          />
-        );
-      } else {
-        const currentDate = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          dayCounter
-        );
-        const dateKey = format(currentDate, "yyyy-MM-dd");
-        const count = dayCounts[dateKey] || 0;
-        weekCells.push(
-          <div
-            key={dateKey}
-            title={`Date: ${dateKey} — ${count} event${count !== 1 ? "s" : ""}`}
-            style={{
-              width: "30px",
-              height: "30px",
-              margin: "2px",
-              backgroundColor: getColor(count, darkMode),
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              fontSize: "10px",
-              borderRadius: "4px",
-              transition: "background-color 0.3s ease",
-              cursor: "default",
-            }}
-          >
-            {dayCounter}
-          </div>
-        );
-        dayCounter++;
-      }
-    }
-    grid.push(
-      <div key={week} style={{ display: "flex" }}>
-        {weekCells}
-      </div>
-    );
-  }
-  return <div>{grid}</div>;
-};
-
-function getColor(count: number, darkMode: boolean): string {
-  if (!darkMode) {
-    if (count === 0) return "#F3E5F5";   
-    if (count < 3) return "#CE93D8";       
-    if (count < 6) return "#AB47BC";       
-    if (count < 10) return "#8E24AA";      
-    return "#6A1B9A";                    
-  } else {
-    if (count === 0) return "#3A3A3A";     
-    if (count < 3) return "#6A1B9A";       
-    if (count < 6) return "#7B1FA2";       
-    if (count < 10) return "#8E24AA";      
-    return "#9C27B0";                    
-  }
-}
+import Heatmap from "@/components/Heatmap"
+import { format } from "date-fns"
+import { getColor } from "@/stores/utils";
 
 export default function Home() {
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({});
@@ -294,7 +195,7 @@ export default function Home() {
             </div>
             <button
               type="submit"
-              className="bg-blue-500 text-white py-2 px-4 rounded"
+              className="bg-blue-500 text-white py-2 px-4 rounded cursor-pointer"
               disabled={loading}
             >
               {loading ? "Fetching..." : "Fetch Events"}
