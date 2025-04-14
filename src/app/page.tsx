@@ -297,7 +297,7 @@ export default function Home() {
       </div>
       <div className="ml-8">
         <div className="ml-12 mt-6">
-          <h2 className="text-xl mb-2">Embed This Heatmap</h2>
+          <h2 className="text-xl mb-2">Iframe</h2>
           <iframe
             srcDoc={embedCode}
             width="100%"
@@ -314,7 +314,7 @@ export default function Home() {
             onClick={handleCopy}
             className="mt-2 bg-green-500 text-white py-2 px-4 rounded cursor-pointer"
           >
-            Copy Embed Code
+            Copy iframe
           </button>
           <span
             style={{
