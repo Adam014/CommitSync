@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import Heatmap from "@/components/Heatmap"
-import { format } from "date-fns"
+import Heatmap from "@/components/Heatmap";
+import { format } from "date-fns";
 import { getColor } from "@/stores/utils";
 
 export default function Home() {
@@ -11,35 +11,53 @@ export default function Home() {
   const [gitLabUsername, setGitLabUsername] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
-  // Auto-sync is enabled only after the user manually submits.
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     if (!gitHubUsername && !gitLabUsername) return;
-  
+
     setLoading(true);
     const eventsAggregate: Record<string, number> = {};
+    
+    // Prepopulate with all days in the current month
     const now = new Date();
-    const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-  
+    const currentMonth = now.getMonth(); // 0-indexed: January is 0
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dateKey = format(date, "yyyy-MM-dd");
+      eventsAggregate[dateKey] = 0;
+    }
+    
+    // Fetch GitHub events with a Personal Access Token (PAT)
     try {
       const ghRes = await fetch(
-        `https://api.github.com/users/${gitHubUsername}/events/public?t=${Date.now()}`
+        `https://api.github.com/users/${gitHubUsername}/events/public?t=${Date.now()}`,
+        {
+          headers: {
+            Authorization: `token ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+          },
+        }
       );
       const ghEvents = await ghRes.json();
+      
+      // Process all GitHub events that belong to the current month
       ghEvents.forEach((event: any) => {
         const eventDate = new Date(event.created_at);
+        // Only process events where the event's year and month match the current month
         if (
-          eventDate.getMonth() === currentMonth &&
-          eventDate.getFullYear() === currentYear
+          eventDate.getFullYear() === currentYear &&
+          eventDate.getMonth() === currentMonth
         ) {
           const dateKey = format(eventDate, "yyyy-MM-dd");
-          if (event.type === "PushEvent" && event.payload?.commits) {
-            eventsAggregate[dateKey] =
-              (eventsAggregate[dateKey] || 0) + event.payload.commits.length;
-          } else {
-            eventsAggregate[dateKey] = (eventsAggregate[dateKey] || 0) + 1;
+          if (dateKey in eventsAggregate) {
+            // Count push events using the number of commits if available.
+            if (event.type === "PushEvent" && event.payload?.commits) {
+              eventsAggregate[dateKey] += event.payload.commits.length;
+            } else {
+              eventsAggregate[dateKey] += 1;
+            }
           }
         }
       });
@@ -47,6 +65,7 @@ export default function Home() {
       console.error("Error fetching GitHub events:", err);
     }
 
+    // Fetch GitLab events (if a token and username are provided)
     try {
       const gitlabToken = process.env.NEXT_PUBLIC_GITLAB_TOKEN;
       if (gitlabToken && gitLabUsername) {
@@ -66,14 +85,17 @@ export default function Home() {
             }
           );
           const glEvents = await glEventsRes.json();
+          // Process GitLab events within the current month
           glEvents.forEach((event: any) => {
             const eventDate = new Date(event.created_at);
             if (
-              eventDate.getMonth() === currentMonth &&
-              eventDate.getFullYear() === currentYear
+              eventDate.getFullYear() === currentYear &&
+              eventDate.getMonth() === currentMonth
             ) {
               const dateKey = format(eventDate, "yyyy-MM-dd");
-              eventsAggregate[dateKey] = (eventsAggregate[dateKey] || 0) + 1;
+              if (dateKey in eventsAggregate) {
+                eventsAggregate[dateKey] += 1;
+              }
             }
           });
         }
@@ -81,7 +103,7 @@ export default function Home() {
     } catch (err) {
       console.error("Error fetching GitLab events:", err);
     }
-  
+
     setDayCounts(eventsAggregate);
     setLoading(false);
   }, [gitHubUsername, gitLabUsername]);
@@ -109,7 +131,7 @@ export default function Home() {
     if (!autoSyncEnabled) return;
     const pollingInterval = setInterval(() => {
       fetchEvents();
-    }, 60000);
+    }, 60000); // Poll every 60 seconds
     return () => clearInterval(pollingInterval);
   }, [autoSyncEnabled, fetchEvents]);
 
@@ -136,7 +158,7 @@ export default function Home() {
     (acc, count) => acc + count,
     0
   );
-  const legendCounts = [0, 1, 3, 6, 10]; // Representative counts for legend thresholds.
+  const legendCounts = [0, 1, 3, 6, 10];
 
   if (!mounted) return null;
 
@@ -152,11 +174,9 @@ export default function Home() {
         <h1 className="p-12 text-2xl">Welcome internet explorer</h1>
         <p className="pl-12">
           In a realm where code is alchemy, this project conjures an enigmatic
-          tapestry-<br />
-          merging the secret whispers of GitHub and GitLab into one mystical
-          graph.<br />
-          It anonymously unveils the hidden rhythm of your commit magic, a silent
-          incantation echoing through the digital ether.
+          tapestry—merging the secret whispers of GitHub and GitLab into one mystical graph.
+          It anonymously unveils the hidden rhythm of your commit magic, displaying every
+          creation, deletion, push, and more across the current month.
         </p>
         <div className="ml-12 mb-6 form-container">
           <form
