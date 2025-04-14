@@ -12,10 +12,6 @@ import {
   GitLabEvent,
 } from "@/types/types";
 
-// ============================
-// Custom Heatmap Component
-// ============================
-
 interface HeatmapProps {
   dayCounts: Record<string, number>;
   darkMode: boolean;
@@ -91,30 +87,21 @@ const Heatmap: React.FC<HeatmapProps> = ({ dayCounts, darkMode }) => {
   return <div>{grid}</div>;
 };
 
-// ------------------------------
-// Color helper – returns magic colors based on count and darkMode flag.
-// ------------------------------
 function getColor(count: number, darkMode: boolean): string {
   if (!darkMode) {
-    // Light mode: mysterious magic lavender palette.
-    if (count === 0) return "#F3E5F5";   // very light lavender
-    if (count < 3) return "#CE93D8";       // soft lavender
-    if (count < 6) return "#AB47BC";       // medium purple
-    if (count < 10) return "#8E24AA";      // deep purple
-    return "#6A1B9A";                    // richest royal purple
+    if (count === 0) return "#F3E5F5";   
+    if (count < 3) return "#CE93D8";       
+    if (count < 6) return "#AB47BC";       
+    if (count < 10) return "#8E24AA";      
+    return "#6A1B9A";                    
   } else {
-    // Dark mode: vibrant, saturated purples that pop.
-    if (count === 0) return "#3A3A3A";     // dark gray for empty
-    if (count < 3) return "#6A1B9A";       // subtle purple
-    if (count < 6) return "#7B1FA2";       // more vivid purple
-    if (count < 10) return "#8E24AA";      // bright royal purple
-    return "#9C27B0";                    // luminous, magical purple
+    if (count === 0) return "#3A3A3A";     
+    if (count < 3) return "#6A1B9A";       
+    if (count < 6) return "#7B1FA2";       
+    if (count < 10) return "#8E24AA";      
+    return "#9C27B0";                    
   }
 }
-
-// ============================
-// Home Component
-// ============================
 
 export default function Home() {
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({});
@@ -126,22 +113,18 @@ export default function Home() {
   // Auto-sync is enabled only after the user manually submits.
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
 
-  // ----------------------------------------------------------------------------
-  // Fetch events for the current month and aggregate counts by day.
-  // ----------------------------------------------------------------------------
   const fetchEvents = useCallback(async () => {
     if (!gitHubUsername && !gitLabUsername) return;
-
+  
     setLoading(true);
     const eventsAggregate: Record<string, number> = {};
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-
-    // GitHub Fetch
+  
     try {
       const ghRes = await fetch(
-        `https://api.github.com/users/${gitHubUsername}/events/public`
+        `https://api.github.com/users/${gitHubUsername}/events/public?t=${Date.now()}`
       );
       const ghEvents = await ghRes.json();
       ghEvents.forEach((event: any) => {
@@ -163,16 +146,13 @@ export default function Home() {
       console.error("Error fetching GitHub events:", err);
     }
 
-    // GitLab Fetch
     try {
       const gitlabToken = process.env.NEXT_PUBLIC_GITLAB_TOKEN;
       if (gitlabToken && gitLabUsername) {
         const glUserRes = await fetch(
           `https://gitlab.com/api/v4/users?username=${gitLabUsername}`,
           {
-            headers: {
-              "Private-Token": gitlabToken,
-            },
+            headers: { "Private-Token": gitlabToken },
           }
         );
         const glUsers = await glUserRes.json();
@@ -181,9 +161,7 @@ export default function Home() {
           const glEventsRes = await fetch(
             `https://gitlab.com/api/v4/users/${userId}/events`,
             {
-              headers: {
-                "Private-Token": gitlabToken,
-              },
+              headers: { "Private-Token": gitlabToken },
             }
           );
           const glEvents = await glEventsRes.json();
@@ -202,14 +180,11 @@ export default function Home() {
     } catch (err) {
       console.error("Error fetching GitLab events:", err);
     }
-
+  
     setDayCounts(eventsAggregate);
     setLoading(false);
   }, [gitHubUsername, gitLabUsername]);
 
-  // ----------------------------------------------------------------------------
-  // On mount: set dark mode based on browser preference and mark as mounted.
-  // ----------------------------------------------------------------------------
   useEffect(() => {
     setMounted(true);
     if (
@@ -229,9 +204,6 @@ export default function Home() {
     }
   }, [darkMode, mounted]);
 
-  // ----------------------------------------------------------------------------
-  // Auto-sync: Poll every minute after manual submit.
-  // ----------------------------------------------------------------------------
   useEffect(() => {
     if (!autoSyncEnabled) return;
     const pollingInterval = setInterval(() => {
@@ -240,9 +212,6 @@ export default function Home() {
     return () => clearInterval(pollingInterval);
   }, [autoSyncEnabled, fetchEvents]);
 
-  // ----------------------------------------------------------------------------
-  // Auto-sync: Timeout to re-fetch at midnight (plus a slight delay) after manual submit.
-  // ----------------------------------------------------------------------------
   useEffect(() => {
     if (!autoSyncEnabled) return;
     const now = new Date();
@@ -261,9 +230,6 @@ export default function Home() {
     return () => clearTimeout(midnightTimeout);
   }, [autoSyncEnabled, fetchEvents]);
 
-  // ----------------------------------------------------------------------------
-  // Compute overview values: current month/year and total events.
-  // ----------------------------------------------------------------------------
   const currentMonthYear = format(new Date(), "MMMM yyyy");
   const totalEvents = Object.values(dayCounts).reduce(
     (acc, count) => acc + count,
@@ -271,9 +237,6 @@ export default function Home() {
   );
   const legendCounts = [0, 1, 3, 6, 10]; // Representative counts for legend thresholds.
 
-  // ----------------------------------------------------------------------------
-  // Render
-  // ----------------------------------------------------------------------------
   if (!mounted) return null;
 
   return (
