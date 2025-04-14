@@ -92,8 +92,14 @@ export default function Home() {
     }
 
     // Fetch from GitLab with token from env variables.
+    // NEXT_PUBLIC_GITLAB_TOKEN is needed, if not provided, gitlab event are skipped
     try {
       const gitlabToken = process.env.NEXT_PUBLIC_GITLAB_TOKEN;
+
+      if(!gitlabToken){
+        return;
+      }
+      
       // Get GitLab user ID from the username.
       const glUserRes = await fetch(
         `https://gitlab.com/api/v4/users?username=${gitLabUsername}`,
