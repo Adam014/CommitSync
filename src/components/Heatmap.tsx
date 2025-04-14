@@ -28,13 +28,13 @@ const Heatmap: React.FC<HeatmapProps> = ({ dayCounts, darkMode }) => {
               margin: "2px",
               backgroundColor: "transparent",
             }}
-          />
+          />,
         );
       } else {
         const currentDate = new Date(
           today.getFullYear(),
           today.getMonth(),
-          dayCounter
+          dayCounter,
         );
         const dateKey = format(currentDate, "yyyy-MM-dd");
         const count = dayCounts[dateKey] || 0;
@@ -57,7 +57,7 @@ const Heatmap: React.FC<HeatmapProps> = ({ dayCounts, darkMode }) => {
             }}
           >
             {dayCounter}
-          </div>
+          </div>,
         );
         dayCounter++;
       }
@@ -65,7 +65,7 @@ const Heatmap: React.FC<HeatmapProps> = ({ dayCounts, darkMode }) => {
     grid.push(
       <div key={week} style={{ display: "flex" }}>
         {weekCells}
-      </div>
+      </div>,
     );
   }
   return <div>{grid}</div>;
