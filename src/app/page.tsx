@@ -1,6 +1,10 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  format,
+  startOfMonth,
+  getDaysInMonth,
+} from "date-fns";
 import {
   CommitEvent,
   GitHubCommit,
@@ -8,14 +12,204 @@ import {
   GitLabEvent,
 } from "@/types/types";
 
+// ============================
+// Custom Heatmap Component
+// ============================
+
+interface HeatmapProps {
+  dayCounts: Record<string, number>;
+  darkMode: boolean;
+}
+
+const Heatmap: React.FC<HeatmapProps> = ({ dayCounts, darkMode }) => {
+  const today = new Date();
+  const startMonth = startOfMonth(today);
+  const daysInMonth = getDaysInMonth(today);
+  const startWeekday = startMonth.getDay();
+
+  // Calculate how many cells and weeks are needed.
+  const totalCells = startWeekday + daysInMonth;
+  const weeks = Math.ceil(totalCells / 7);
+
+  let dayCounter = 1;
+  const grid: JSX.Element[] = [];
+
+  for (let week = 0; week < weeks; week++) {
+    const weekCells = [];
+    for (let day = 0; day < 7; day++) {
+      const cellIndex = week * 7 + day;
+      if (cellIndex < startWeekday || dayCounter > daysInMonth) {
+        weekCells.push(
+          <div
+            key={`empty-${cellIndex}`}
+            style={{
+              width: "30px",
+              height: "30px",
+              margin: "2px",
+              backgroundColor: "transparent",
+            }}
+          />
+        );
+      } else {
+        const currentDate = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          dayCounter
+        );
+        const dateKey = format(currentDate, "yyyy-MM-dd");
+        const count = dayCounts[dateKey] || 0;
+        weekCells.push(
+          <div
+            key={dateKey}
+            title={`Date: ${dateKey} — ${count} event${count !== 1 ? "s" : ""}`}
+            style={{
+              width: "30px",
+              height: "30px",
+              margin: "2px",
+              backgroundColor: getColor(count, darkMode),
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "10px",
+              borderRadius: "4px",
+              transition: "background-color 0.3s ease",
+              cursor: "default",
+            }}
+          >
+            {dayCounter}
+          </div>
+        );
+        dayCounter++;
+      }
+    }
+    grid.push(
+      <div key={week} style={{ display: "flex" }}>
+        {weekCells}
+      </div>
+    );
+  }
+  return <div>{grid}</div>;
+};
+
+// ------------------------------
+// Color helper – returns magic colors based on count and darkMode flag.
+// ------------------------------
+function getColor(count: number, darkMode: boolean): string {
+  if (!darkMode) {
+    // Light mode: mysterious magic lavender palette.
+    if (count === 0) return "#F3E5F5";   // very light lavender
+    if (count < 3) return "#CE93D8";       // soft lavender
+    if (count < 6) return "#AB47BC";       // medium purple
+    if (count < 10) return "#8E24AA";      // deep purple
+    return "#6A1B9A";                    // richest royal purple
+  } else {
+    // Dark mode: vibrant, saturated purples that pop.
+    if (count === 0) return "#3A3A3A";     // dark gray for empty
+    if (count < 3) return "#6A1B9A";       // subtle purple
+    if (count < 6) return "#7B1FA2";       // more vivid purple
+    if (count < 10) return "#8E24AA";      // bright royal purple
+    return "#9C27B0";                    // luminous, magical purple
+  }
+}
+
+// ============================
+// Home Component
+// ============================
+
 export default function Home() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [dayCounts, setDayCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
   const [gitHubUsername, setGitHubUsername] = useState("");
   const [gitLabUsername, setGitLabUsername] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  // Auto-sync is enabled only after the user manually submits.
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
 
-  // Set mounted and theme based on browser preference.
+  // ----------------------------------------------------------------------------
+  // Fetch events for the current month and aggregate counts by day.
+  // ----------------------------------------------------------------------------
+  const fetchEvents = useCallback(async () => {
+    if (!gitHubUsername && !gitLabUsername) return;
+
+    setLoading(true);
+    const eventsAggregate: Record<string, number> = {};
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // GitHub Fetch
+    try {
+      const ghRes = await fetch(
+        `https://api.github.com/users/${gitHubUsername}/events/public`
+      );
+      const ghEvents = await ghRes.json();
+      ghEvents.forEach((event: any) => {
+        const eventDate = new Date(event.created_at);
+        if (
+          eventDate.getMonth() === currentMonth &&
+          eventDate.getFullYear() === currentYear
+        ) {
+          const dateKey = format(eventDate, "yyyy-MM-dd");
+          if (event.type === "PushEvent" && event.payload?.commits) {
+            eventsAggregate[dateKey] =
+              (eventsAggregate[dateKey] || 0) + event.payload.commits.length;
+          } else {
+            eventsAggregate[dateKey] = (eventsAggregate[dateKey] || 0) + 1;
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Error fetching GitHub events:", err);
+    }
+
+    // GitLab Fetch
+    try {
+      const gitlabToken = process.env.NEXT_PUBLIC_GITLAB_TOKEN;
+      if (gitlabToken && gitLabUsername) {
+        const glUserRes = await fetch(
+          `https://gitlab.com/api/v4/users?username=${gitLabUsername}`,
+          {
+            headers: {
+              "Private-Token": gitlabToken,
+            },
+          }
+        );
+        const glUsers = await glUserRes.json();
+        if (Array.isArray(glUsers) && glUsers.length > 0) {
+          const userId = glUsers[0].id;
+          const glEventsRes = await fetch(
+            `https://gitlab.com/api/v4/users/${userId}/events`,
+            {
+              headers: {
+                "Private-Token": gitlabToken,
+              },
+            }
+          );
+          const glEvents = await glEventsRes.json();
+          glEvents.forEach((event: any) => {
+            const eventDate = new Date(event.created_at);
+            if (
+              eventDate.getMonth() === currentMonth &&
+              eventDate.getFullYear() === currentYear
+            ) {
+              const dateKey = format(eventDate, "yyyy-MM-dd");
+              eventsAggregate[dateKey] = (eventsAggregate[dateKey] || 0) + 1;
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching GitLab events:", err);
+    }
+
+    setDayCounts(eventsAggregate);
+    setLoading(false);
+  }, [gitHubUsername, gitLabUsername]);
+
+  // ----------------------------------------------------------------------------
+  // On mount: set dark mode based on browser preference and mark as mounted.
+  // ----------------------------------------------------------------------------
   useEffect(() => {
     setMounted(true);
     if (
@@ -30,135 +224,63 @@ export default function Home() {
     if (mounted) {
       document.documentElement.setAttribute(
         "data-theme",
-        darkMode ? "dark" : "light",
+        darkMode ? "dark" : "light"
       );
     }
   }, [darkMode, mounted]);
 
-  // Handler to fetch events for the current month.
-  async function handleFetchCommits(
-    e: React.FormEvent<HTMLFormElement>,
-  ): Promise<void> {
-    e.preventDefault();
-    setLoading(true);
-    const allEvents: CommitEvent[] = [];
+  // ----------------------------------------------------------------------------
+  // Auto-sync: Poll every minute after manual submit.
+  // ----------------------------------------------------------------------------
+  useEffect(() => {
+    if (!autoSyncEnabled) return;
+    const pollingInterval = setInterval(() => {
+      fetchEvents();
+    }, 60000);
+    return () => clearInterval(pollingInterval);
+  }, [autoSyncEnabled, fetchEvents]);
+
+  // ----------------------------------------------------------------------------
+  // Auto-sync: Timeout to re-fetch at midnight (plus a slight delay) after manual submit.
+  // ----------------------------------------------------------------------------
+  useEffect(() => {
+    if (!autoSyncEnabled) return;
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const nextMidnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      0,
+      0,
+      5
+    );
+    const msUntilMidnight = nextMidnight.getTime() - now.getTime();
+    const midnightTimeout = setTimeout(() => {
+      fetchEvents();
+    }, msUntilMidnight);
+    return () => clearTimeout(midnightTimeout);
+  }, [autoSyncEnabled, fetchEvents]);
 
-    // Fetch from GitHub public events
-    try {
-      const ghRes = await fetch(
-        `https://api.github.com/users/${gitHubUsername}/events/public`,
-      );
-      const ghEvents: GitHubEvent[] = await ghRes.json();
+  // ----------------------------------------------------------------------------
+  // Compute overview values: current month/year and total events.
+  // ----------------------------------------------------------------------------
+  const currentMonthYear = format(new Date(), "MMMM yyyy");
+  const totalEvents = Object.values(dayCounts).reduce(
+    (acc, count) => acc + count,
+    0
+  );
+  const legendCounts = [0, 1, 3, 6, 10]; // Representative counts for legend thresholds.
 
-      // Process each event if it occurs in the current month.
-      ghEvents.forEach((event: GitHubEvent) => {
-        const eventDate = new Date(event.created_at);
-        if (
-          eventDate.getMonth() === currentMonth &&
-          eventDate.getFullYear() === currentYear
-        ) {
-          // If it's a PushEvent, include details for each commit.
-          if (event.type === "PushEvent" && event.payload.commits) {
-            event.payload.commits.forEach((commit: GitHubCommit) => {
-              allEvents.push({
-                platform: "GitHub",
-                type: event.type,
-                message: commit.message,
-                sha: commit.sha,
-                repo: event.repo?.name || "Unknown repo",
-                date: eventDate,
-              });
-            });
-          } else {
-            // For other events, record a general summary.
-            allEvents.push({
-              platform: "GitHub",
-              type: event.type,
-              message:
-                event.payload.action ||
-                event.payload.description ||
-                "No message",
-              repo: event.repo?.name || "Unknown repo",
-              date: eventDate,
-            });
-          }
-        }
-      });
-    } catch (err) {
-      console.error("Error fetching GitHub events:", err);
-    }
-
-    // Fetch from GitLab with token from env variables.
-    // NEXT_PUBLIC_GITLAB_TOKEN is needed, if not provided, gitlab event are skipped
-    try {
-      const gitlabToken = process.env.NEXT_PUBLIC_GITLAB_TOKEN;
-
-      if(!gitlabToken){
-        return;
-      }
-      
-      // Get GitLab user ID from the username.
-      const glUserRes = await fetch(
-        `https://gitlab.com/api/v4/users?username=${gitLabUsername}`,
-        {
-          headers: {
-            "Private-Token": gitlabToken || "",
-          },
-        },
-      );
-      const glUsers = await glUserRes.json();
-      if (glUsers.length > 0) {
-        const userId = glUsers[0].id;
-        // Fetch events for that user.
-        const glEventsRes = await fetch(
-          `https://gitlab.com/api/v4/users/${userId}/events`,
-          {
-            headers: {
-              "Private-Token": gitlabToken || "",
-            },
-          },
-        );
-        const glEvents: GitLabEvent[] = await glEventsRes.json();
-        glEvents.forEach((event: GitLabEvent) => {
-          const eventDate = new Date(event.created_at);
-          if (
-            eventDate.getMonth() === currentMonth &&
-            eventDate.getFullYear() === currentYear
-          ) {
-            // For GitLab events, use action_name or title for a summary.
-            allEvents.push({
-              platform: "GitLab",
-              type: event.action_name || "Event",
-              message: event.title || "No message",
-              repo: event.project_id
-                ? `Project ${event.project_id}`
-                : "Unknown",
-              date: eventDate,
-            });
-          }
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching GitLab events:", err);
-    }
-
-    // Log the monthly events to the console for confirmation.
-    console.log("Monthly events for the current month:", allEvents);
-    setLoading(false);
-  }
-
+  // ----------------------------------------------------------------------------
+  // Render
+  // ----------------------------------------------------------------------------
   if (!mounted) return null;
 
   return (
     <div className="bg-[var(--color-background)] text-[var(--color-foreground)] min-h-screen relative">
       <button
         onClick={() => setDarkMode((prev) => !prev)}
-        className={`absolute top-[10px] left-[10px] py-2 px-3 rounded cursor-pointer ${
-          darkMode ? "bg-[#ccc] text-[#333]" : "bg-[#333] text-[#fff]"
-        }`}
+        className="absolute top-2 left-2 py-2 px-3 rounded cursor-pointer"
       >
         {darkMode ? "☀️" : "🌙"}
       </button>
@@ -166,49 +288,78 @@ export default function Home() {
         <h1 className="p-12 text-2xl">Welcome internet explorer</h1>
         <p className="pl-12">
           In a realm where code is alchemy, this project conjures an enigmatic
-          tapestry-
-          <br />
+          tapestry-<br />
           merging the secret whispers of GitHub and GitLab into one mystical
-          graph.
-          <br />
-          It anonymously unveils the hidden rhythm of your commit magic, a
-          silent incantation echoing through the digital ether.
+          graph.<br />
+          It anonymously unveils the hidden rhythm of your commit magic, a silent
+          incantation echoing through the digital ether.
         </p>
-        <form onSubmit={handleFetchCommits} className="space-y-4 mb-6 ml-12">
-          <div>
-            <label htmlFor="github" className="block mb-1 mt-4">
-              GitHub Username
-            </label>
-            <input
-              type="text"
-              id="github"
-              value={gitHubUsername}
-              onChange={(e) => setGitHubUsername(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Enter your GitHub username"
-            />
-          </div>
-          <div>
-            <label htmlFor="gitlab" className="block mb-1 mt-4">
-              GitLab Username
-            </label>
-            <input
-              type="text"
-              id="gitlab"
-              value={gitLabUsername}
-              onChange={(e) => setGitLabUsername(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Enter your GitLab username"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-500 text-white py-2 px-4 rounded cursor-pointer"
+        <div className="ml-12 mb-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              fetchEvents(); // Fetch instantly on submit.
+              setAutoSyncEnabled(true); // Enable auto-sync after manual fetch.
+            }}
+            className="space-y-4 mt-8"
           >
-            {loading ? "Fetching..." : "Fetch Monthly Events"}
-          </button>
-        </form>
+            <div>
+              <label htmlFor="github" className="block mb-1">
+                GitHub Username
+              </label>
+              <input
+                type="text"
+                id="github"
+                value={gitHubUsername}
+                onChange={(e) => setGitHubUsername(e.target.value)}
+                placeholder="Enter your GitHub username"
+                className="p-2 border border-gray-300 rounded"
+              />
+            </div>
+            <div>
+              <label htmlFor="gitlab" className="block mb-1">
+                GitLab Username
+              </label>
+              <input
+                type="text"
+                id="gitlab"
+                value={gitLabUsername}
+                onChange={(e) => setGitLabUsername(e.target.value)}
+                placeholder="Enter your GitLab username"
+                className="p-2 border border-gray-300 rounded"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-500 text-white py-2 px-4 rounded"
+              disabled={loading}
+            >
+              {loading ? "Fetching..." : "Fetch Events"}
+            </button>
+          </form>
+        </div>
+        {/* Overview Section */}
+        <div className="ml-12 mb-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium">{currentMonthYear}</span>
+            <span className="text-sm">{totalEvents} event{totalEvents !== 1 ? "s" : ""}</span>
+          </div>
+          <div className="flex items-center mt-2">
+            <span className="text-sm mr-2">Less</span>
+            {legendCounts.map((val, idx) => (
+              <div
+                key={idx}
+                className="w-4 h-4 mx-1"
+                style={{ backgroundColor: getColor(val, darkMode), borderRadius: "2px" }}
+              />
+            ))}
+            <span className="text-sm ml-2">More</span>
+          </div>
+        </div>
+        {/* Heatmap */}
+        <div className="ml-12">
+          <Heatmap dayCounts={dayCounts} darkMode={darkMode} />
+        </div>
       </div>
     </div>
   );
