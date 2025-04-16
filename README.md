@@ -94,4 +94,4 @@ At least one of `github` or `gitlab` must be non-empty for any activity to appea
 <img src="/api/heatmap?github=octocat" alt="GitHub only heatmap" />
 ```
 
-###### Thanks if you read this far, I really appreciate it.
+###### Thanks if you read this far, I really appreciate it. It means a lot to me.
