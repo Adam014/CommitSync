@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# commit-sync
 
-## Getting Started
+# Overview
 
-First, run the development server:
+The Heatmap API generates a self‑contained SVG representing your activity for the current month, combining:
+    - GitHub commits (via the Search API)
+    - GitLab events
+    - A GitHub‑style calendar grid
+    - A month/year header, total‑event count, and a “Less … More” legend
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+All you need is to call:
+
+```http
+GET /api/heatmap?github=<GH_USERNAME>&gitlab=<GL_USERNAME>&mode=<light|dark>&bg=%<HEX_COLOR>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To get SVG image of your git heatmap.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Endpoint
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```http
+GET /api/heatmap
+Host: your-domain.com
+```
 
-## Learn More
+Response:
 
-To learn more about Next.js, take a look at the following resources:
+- 200 OK
+- `Content-Type: image/svg+xml`
+- No caching (headers: `Cache-Control: no-cache, no store, must-revalidate)¨
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Query Parameters
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Parameter | Type | ?Required | Default | Description|
+|-----------|------|-----------|---------|------------|
+| github    | string| No       | ""      | Github username
+| gitlab    | string| No       | ""      | Gitlab username
+| mode      | string| No       | "light" | "light" or "dark"
+| bg        | hex   | No       | Light: #f4f8d3
+|           |       |          | Dark: #0a0a0a
 
-## Deploy on Vercel
+At least one of `github` or `gitlab` must be non-empty for any activity to appear. Empty names simply skip the corresponding service.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## How it works
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Date range
+    - Automatically set to the first day of this month throught today
+2. Github Commits
+    - Uses the Search Commits API:
+    ```http
+        GET https://api.github.com/search/commits
+        ?q=author:<githubUsername> committer-date:<start>..<end>
+        &per_page=100
+        Accept: application/vnd.github.cloak-preview
+        Authorization: token YOUR_GITHUB_API_KEY
+    ```
+    - Counts each returned commit
+3. Gitlab Events
+    - Fetches the user by name, then their `/events?per_page=100` feed
+    - Counts each event occurrence
+4. Aggregation
+    - Creates a day-keyed map (`YYYY-MM-DD`) initialized to zero for every day of the month.
+    - Increments the count for each commit/event
+5. SVG Rendering
+    - Header: `April 2025 37 events`
+    - Legend: Less [□][□][□][□][□] More
+    - Grid: Weeks * 7, each cell sized 30x30 pixels (with 2 pixels gaps), colored via `getColor(count, darkMode)` and labeled with the day number.
+
+## Usage examples
+
+### Light mode (default bg)
+
+```html
+<img
+  src="/api/heatmap?github=octocat&gitlab=octocat"
+  alt="My April Activity"
+/>
+```
+
+### Dark mode with custom background
+```html
+<img
+  src="/api/heatmap?
+     github=octocat
+     &gitlab=octocat
+     &mode=dark
+     &bg=%23111111"  <!-- note: URL‑encode “#” as “%23” -->
+  alt="My April Activity (dark)"
+/>
+```
+
+### Only GitHub
+```html
+<img src="/api/heatmap?github=octocat" alt="GitHub only heatmap" />
+```
+
+###### Thanks if you read this far, I really appreciate it.
