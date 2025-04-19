@@ -11,14 +11,17 @@ async function fetchEvents(
   githubUsername: string,
   gitlabUsername: string,
   currentYear: number,
-  currentMonth: number
+  currentMonth: number,
 ): Promise<Record<string, number>> {
   const eventsAggregate: Record<string, number> = {};
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
   // Initialize count for every day in the month.
   for (let day = 1; day <= daysInMonth; day++) {
-    const dateKey = format(new Date(currentYear, currentMonth, day), "yyyy-MM-dd");
+    const dateKey = format(
+      new Date(currentYear, currentMonth, day),
+      "yyyy-MM-dd",
+    );
     eventsAggregate[dateKey] = 0;
   }
 
@@ -26,7 +29,14 @@ async function fetchEvents(
   if (githubUsername) {
     try {
       const firstDay = new Date(currentYear, currentMonth, 1).toISOString();
-      const lastDay = new Date(currentYear, currentMonth, daysInMonth, 23, 59, 59).toISOString();
+      const lastDay = new Date(
+        currentYear,
+        currentMonth,
+        daysInMonth,
+        23,
+        59,
+        59,
+      ).toISOString();
       const githubQuery = `author:${githubUsername} committer-date:${firstDay}..${lastDay}`;
       const ghRes = await fetch(
         `https://api.github.com/search/commits?q=${encodeURIComponent(githubQuery)}&per_page=100`,
@@ -35,7 +45,7 @@ async function fetchEvents(
             Accept: "application/vnd.github.cloak-preview",
             Authorization: `token ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
           },
-        }
+        },
       );
       const ghData = await ghRes.json();
       (ghData.items || []).forEach((commit: GitHubCommit) => {
@@ -58,14 +68,14 @@ async function fetchEvents(
         `https://gitlab.com/api/v4/users?username=${gitlabUsername}`,
         {
           headers: { "Private-Token": gitlabToken },
-        }
+        },
       );
       const glUsers = await glUserRes.json();
       if (Array.isArray(glUsers) && glUsers.length > 0) {
         const userId = glUsers[0].id;
         const glEventsRes = await fetch(
           `https://gitlab.com/api/v4/users/${userId}/events?per_page=100`,
-          { headers: { "Private-Token": gitlabToken } }
+          { headers: { "Private-Token": gitlabToken } },
         );
         const glEvents = await glEventsRes.json();
         (glEvents || []).forEach((event: GitLabCommit) => {
@@ -109,7 +119,12 @@ export async function GET(request: Request) {
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
   // Aggregate events using our helper function.
-  const dayCounts = await fetchEvents(github, gitlab, currentYear, currentMonth);
+  const dayCounts = await fetchEvents(
+    github,
+    gitlab,
+    currentYear,
+    currentMonth,
+  );
   const totalEvents = Object.values(dayCounts).reduce((acc, n) => acc + n, 0);
   const currentMonthYear = format(now, "MMMM yyyy");
 

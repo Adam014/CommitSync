@@ -4,18 +4,20 @@ import Heatmap from "@/components/Heatmap";
 import { format } from "date-fns";
 import { getColor } from "@/stores/utils";
 import { GitHubCommit, GitLabCommit } from "@/types/types";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function Home() {
+  const { darkMode, mounted, setMounted } = useTheme();
+
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const [gitHubUsername, setGitHubUsername] = useState("");
   const [gitLabUsername, setGitLabUsername] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [isEmbed, setIsEmbed] = useState(false);
   const [embedCode, setEmbedCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [embedTheme, setEmbedTheme] = useState<"light" | "dark">("light");
 
   const fetchEvents = useCallback(async () => {
     // Exit if neither username is provided
@@ -113,15 +115,6 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    if (
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-      setDarkMode(true);
-    }
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const darkModeHandler = (e: MediaQueryListEvent) => setDarkMode(e.matches);
-    mediaQuery.addEventListener("change", darkModeHandler);
     const params = new URLSearchParams(window.location.search);
     setIsEmbed(params.get("embed") === "true");
     const githubParam = params.get("github") || "";
@@ -131,17 +124,7 @@ export default function Home() {
     if (params.get("embed") === "true") {
       fetchEvents();
     }
-    return () => mediaQuery.removeEventListener("change", darkModeHandler);
-  }, [fetchEvents]);
-
-  useEffect(() => {
-    if (mounted) {
-      document.documentElement.setAttribute(
-        "data-theme",
-        darkMode ? "dark" : "light",
-      );
-    }
-  }, [darkMode, mounted]);
+  }, [fetchEvents, setMounted]);
 
   useEffect(() => {
     if (!autoSyncEnabled) return;
@@ -184,11 +167,22 @@ export default function Home() {
 
   const updateEmbedCode = () => {
     const origin = window.location.origin;
-    const embedUrl = `${origin}${window.location.pathname}?embed=true&github=${encodeURIComponent(
-      gitHubUsername,
-    )}&gitlab=${encodeURIComponent(gitLabUsername)}`;
+    const embedUrl =
+      `${origin}${window.location.pathname}` +
+      `?embed=true` +
+      `&theme=${embedTheme}` +
+      `&github=${encodeURIComponent(gitHubUsername)}` +
+      `&gitlab=${encodeURIComponent(gitLabUsername)}`;
+
     setEmbedCode(
-      `<iframe src="${embedUrl}" width="100%" height="300" style="border:none; overflow:hidden; background: transparent;" scrolling="no" frameborder="0"></iframe>`,
+      `<iframe
+         src="${embedUrl}"
+         width="100%"
+         height="300"
+         style="border:none; overflow:hidden; background:transparent;"
+         scrolling="no"
+         frameborder="0"
+       ></iframe>`,
     );
   };
 
@@ -233,22 +227,10 @@ export default function Home() {
   }
 
   return (
-    <div className="bg-[var(--color-background)] text-[var(--color-foreground)] min-h-screen relative">
-      <button
-        onClick={() => setDarkMode((prev) => !prev)}
-        className="absolute top-2 left-2 py-2 px-3 rounded cursor-pointer"
-      >
-        {darkMode ? "☀️" : "🌙"}
-      </button>
-      <div className="p-8">
+    <div>
+      <div className="p-2">
         <h1 className="p-12 text-2xl">Welcome internet explorer</h1>
-        <p className="pl-12">
-          In a realm where code is alchemy, this project conjures an enigmatic
-          tapestry—merging the secret whispers of GitHub and GitLab into one
-          mystical graph. It anonymously unveils the hidden rhythm of your
-          commit magic, displaying every creation, deletion, comment, and push
-          across the current month.
-        </p>
+        <h2 className="pl-12 text-2xl underline">1.0 Generate iframe</h2>
         <div className="ml-12">
           <form
             onSubmit={(e) => {
@@ -285,6 +267,32 @@ export default function Home() {
                 className="p-2 border border-gray-300 rounded w-1/3"
               />
             </div>
+
+            <div className="flex items-center space-x-6 mt-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="embedTheme"
+                  value="light"
+                  checked={embedTheme === "light"}
+                  onChange={() => setEmbedTheme("light")}
+                  className="mr-2"
+                />
+                Light
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="embedTheme"
+                  value="dark"
+                  checked={embedTheme === "dark"}
+                  onChange={() => setEmbedTheme("dark")}
+                  className="mr-2"
+                />
+                Dark
+              </label>
+            </div>
+
             <button
               type="submit"
               className="bg-blue-500 text-white py-2 px-4 rounded cursor-pointer"
@@ -293,26 +301,33 @@ export default function Home() {
               {loading ? "Fetching..." : "Fetch Events"}
             </button>
           </form>
+          <a href="lol u thought">
+            <p className="underline pt-4">
+              2.0 Generate SVG link UNDER CONSTRUCTION
+            </p>
+          </a>
         </div>
       </div>
-      <div className="ml-8">
+      <div className="ml-2">
         <div className="ml-12 mt-6">
-          <h2 className="text-xl mb-2">Iframe</h2>
-          <iframe
-            srcDoc={embedCode}
-            width="100%"
-            height="300"
-            style={{
-              border: "none",
-              overflow: "hidden",
-              background: "transparent",
-            }}
-            scrolling="no"
-            title="Embed Heatmap"
-          />
+          <h2 className="text-xl">Iframe</h2>
+          <div>
+            <iframe
+              srcDoc={embedCode}
+              width="14%"
+              height="300"
+              style={{
+                border: "none",
+                overflow: "hidden",
+                background: "transparent",
+              }}
+              scrolling="no"
+              title="Embed Heatmap"
+            />
+          </div>
           <button
             onClick={handleCopy}
-            className="mt-2 bg-green-500 text-white py-2 px-4 rounded cursor-pointer"
+            className="mt-6 bg-green-500 text-white py-2 px-4 rounded cursor-pointer"
           >
             Copy iframe
           </button>
