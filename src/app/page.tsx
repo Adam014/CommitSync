@@ -227,11 +227,11 @@ export default function Home() {
   }
 
   return (
-    <div>
-      <div className="p-2">
-        <h1 className="p-12 text-2xl">Welcome internet explorer</h1>
-        <h2 className="pl-12 text-2xl underline">1.0 Generate iframe</h2>
-        <div className="ml-12">
+    <div className="text-center md:text-left">
+      <div className="md:p-2">
+        <h1 className="pt-16 md:p-12 text-xl md:text-2xl">Welcome internet explorer</h1>
+        <h2 className="mt-4 text-2xl underline md:ml-12">1.0 Generate iframe</h2>
+        <div className="md:ml-12 ml-4 mr-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -251,7 +251,7 @@ export default function Home() {
                 value={gitHubUsername}
                 onChange={(e) => setGitHubUsername(e.target.value)}
                 placeholder="Enter your GitHub username"
-                className="p-2 border border-gray-300 rounded w-1/3"
+                className="p-2 border border-gray-300 rounded w-full md:w-1/3"
               />
             </div>
             <div>
@@ -264,7 +264,7 @@ export default function Home() {
                 value={gitLabUsername}
                 onChange={(e) => setGitLabUsername(e.target.value)}
                 placeholder="Enter your GitLab username"
-                className="p-2 border border-gray-300 rounded w-1/3"
+                className="p-2 border border-gray-300 rounded w-full md:w-1/3"
               />
             </div>
 
@@ -308,13 +308,13 @@ export default function Home() {
           </a>
         </div>
       </div>
-      <div className="ml-2">
-        <div className="ml-12 mt-6">
+      <div className="md:ml-2">
+        <div className="md:ml-12 mt-6">
           <h2 className="text-xl">Iframe</h2>
           <div>
             <iframe
               srcDoc={embedCode}
-              width="14%"
+              width="100%"
               height="300"
               style={{
                 border: "none",
