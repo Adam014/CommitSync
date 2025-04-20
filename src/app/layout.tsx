@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "commit-sync",
+  title: "commit-sync / iframe",
   description:
     "Sync your commit history from Github and Gitlab to a commit graph.",
 };

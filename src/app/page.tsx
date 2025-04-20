@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { getColor } from "@/stores/utils";
 import { GitHubCommit, GitLabCommit } from "@/types/types";
 import { useTheme } from "@/components/ThemeProvider";
+import Link from "next/link";
 
 export default function Home() {
   const { darkMode, mounted, setMounted } = useTheme();
@@ -229,8 +230,12 @@ export default function Home() {
   return (
     <div className="text-center md:text-left">
       <div className="md:p-2">
-        <h1 className="pt-16 md:p-12 text-xl md:text-2xl">Welcome internet explorer</h1>
-        <h2 className="mt-4 text-2xl underline md:ml-12">1.0 Generate iframe</h2>
+        <h1 className="pt-16 md:p-12 text-xl md:text-2xl">
+          Welcome internet explorer
+        </h1>
+        <h2 className="mt-4 text-2xl underline md:ml-12">
+          1.0 Generate iframe
+        </h2>
         <div className="md:ml-12 ml-4 mr-4">
           <form
             onSubmit={(e) => {
@@ -301,11 +306,9 @@ export default function Home() {
               {loading ? "Fetching..." : "Fetch Events"}
             </button>
           </form>
-          <a href="lol u thought">
-            <p className="underline pt-4">
-              2.0 Generate SVG link UNDER CONSTRUCTION
-            </p>
-          </a>
+          <Link href={"/svg"}>
+            <p className="underline pt-4">2.0 Generate SVG</p>
+          </Link>
         </div>
       </div>
       <div className="md:ml-2">
