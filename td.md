@@ -18,3 +18,4 @@
     SVG → PNG (client‑side, canvas.toBlob())
 
     SVG → PDF (server‑side s pdfkit nebo puppeteer)
+6. Vytvorit CLI appku na generaci
