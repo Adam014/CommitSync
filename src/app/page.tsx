@@ -1,11 +1,17 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import Heatmap from "@/components/Heatmap";
-import { format } from "date-fns";
-import { getColor } from "@/stores/utils";
-import { GitHubCommit, GitLabCommit } from "@/types/types";
-import { useTheme } from "@/components/ThemeProvider";
 import Link from "next/link";
+import { useTheme } from "@/components/ThemeProvider";
+import {
+  fetchEvents,
+  handleCopy,
+  updateEmbedCode,
+  legendCounts,
+  getCurrentMonthYear,
+  calculateTotalEvents,
+  getColor
+} from "@/stores/utils";
 
 export default function Home() {
   const { darkMode, mounted, setMounted } = useTheme();
@@ -20,97 +26,10 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [embedTheme, setEmbedTheme] = useState<"light" | "dark">("light");
 
-  const fetchEvents = useCallback(async () => {
-    // Exit if neither username is provided
-    if (!gitHubUsername && !gitLabUsername) return;
-
+  const fetchEventsCallback = useCallback(async () => {
     setLoading(true);
-
-    // Prepare the aggregate object with one key per day in the current month.
-    const eventsAggregate: Record<string, number> = {};
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      const dateKey = format(date, "yyyy-MM-dd");
-      eventsAggregate[dateKey] = 0;
-    }
-
-    // Fetch GitHub commits for the current month if provided.
-    if (gitHubUsername) {
-      try {
-        const firstDay = new Date(currentYear, currentMonth, 1).toISOString();
-        const lastDay = new Date(
-          currentYear,
-          currentMonth,
-          daysInMonth,
-          23,
-          59,
-          59,
-        ).toISOString();
-        const githubQuery = `author:${gitHubUsername} committer-date:${firstDay}..${lastDay}`;
-        const ghRes = await fetch(
-          `https://api.github.com/search/commits?q=${encodeURIComponent(githubQuery)}&per_page=100`,
-          {
-            headers: {
-              Accept: "application/vnd.github.cloak-preview",
-              Authorization: `token ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
-            },
-          },
-        );
-        const ghData = await ghRes.json();
-        (ghData.items || []).forEach((commit: GitHubCommit) => {
-          const commitDate = new Date(commit.commit.author.date);
-          const dateKey = format(commitDate, "yyyy-MM-dd");
-          if (dateKey in eventsAggregate) {
-            eventsAggregate[dateKey] += 1;
-          }
-        });
-      } catch (err) {
-        console.error("Error fetching GitHub commits:", err);
-      }
-    }
-
-    // Fetch GitLab events (which include commits, comments, etc.) for the current month if provided.
-    if (process.env.NEXT_PUBLIC_GITLAB_TOKEN && gitLabUsername) {
-      try {
-        const gitlabToken = process.env.NEXT_PUBLIC_GITLAB_TOKEN;
-        // Get user ID from GitLab
-        const glUserRes = await fetch(
-          `https://gitlab.com/api/v4/users?username=${gitLabUsername}`,
-          { headers: { "Private-Token": gitlabToken } },
-        );
-        const glUsers = await glUserRes.json();
-        if (Array.isArray(glUsers) && glUsers.length > 0) {
-          const userId = glUsers[0].id;
-          // Fetch up to 100 of the user’s most recent events.
-          const glEventsRes = await fetch(
-            `https://gitlab.com/api/v4/users/${userId}/events?per_page=100`,
-            { headers: { "Private-Token": gitlabToken } },
-          );
-          const glEvents = await glEventsRes.json();
-          (glEvents || []).forEach((event: GitLabCommit) => {
-            const eventDate = new Date(event.created_at);
-            // Only include events that fall within the current month.
-            if (
-              eventDate.getFullYear() === currentYear &&
-              eventDate.getMonth() === currentMonth
-            ) {
-              const dateKey = format(eventDate, "yyyy-MM-dd");
-              if (dateKey in eventsAggregate) {
-                eventsAggregate[dateKey] += 1;
-              }
-            }
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching GitLab events:", err);
-      }
-    }
-
-    setDayCounts(eventsAggregate);
+    const data = await fetchEvents(gitHubUsername, gitLabUsername);
+    setDayCounts(data);
     setLoading(false);
   }, [gitHubUsername, gitLabUsername]);
 
@@ -123,17 +42,17 @@ export default function Home() {
     if (githubParam) setGitHubUsername(githubParam);
     if (gitlabParam) setGitLabUsername(gitlabParam);
     if (params.get("embed") === "true") {
-      fetchEvents();
+      fetchEventsCallback();
     }
-  }, [fetchEvents, setMounted]);
+  }, [fetchEventsCallback, setMounted]);
 
   useEffect(() => {
     if (!autoSyncEnabled) return;
     const pollingInterval = setInterval(() => {
-      fetchEvents();
+      fetchEventsCallback();
     }, 60000);
     return () => clearInterval(pollingInterval);
-  }, [autoSyncEnabled, fetchEvents]);
+  }, [autoSyncEnabled, fetchEventsCallback]);
 
   useEffect(() => {
     if (!autoSyncEnabled) return;
@@ -148,76 +67,28 @@ export default function Home() {
     );
     const msUntilMidnight = nextMidnight.getTime() - now.getTime();
     const midnightTimeout = setTimeout(() => {
-      fetchEvents();
+      fetchEventsCallback();
     }, msUntilMidnight);
     return () => clearTimeout(midnightTimeout);
-  }, [autoSyncEnabled, fetchEvents]);
+  }, [autoSyncEnabled, fetchEventsCallback]);
 
-  const currentMonthYear = format(new Date(), "MMMM yyyy");
-  const totalEvents = Object.values(dayCounts).reduce(
-    (acc, count) => acc + count,
-    0,
-  );
-  const legendCounts = [0, 1, 3, 6, 10];
+  const currentMonthYear = getCurrentMonthYear();
+  const totalEvents = calculateTotalEvents(dayCounts);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(embedCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const updateEmbedCode = () => {
-    const origin = window.location.origin;
-    const embedUrl =
-      `${origin}${window.location.pathname}` +
-      `?embed=true` +
-      `&theme=${embedTheme}` +
-      `&github=${encodeURIComponent(gitHubUsername)}` +
-      `&gitlab=${encodeURIComponent(gitLabUsername)}`;
-
-    setEmbedCode(
-      `<iframe
-         src="${embedUrl}"
-         width="100%"
-         height="300"
-         style="border:none; overflow:hidden; background:transparent;"
-         scrolling="no"
-         frameborder="0"
-       ></iframe>`,
-    );
-  };
-
-  // Prevent rendering until the component has mounted to avoid hydration errors.
   if (!mounted) return null;
 
   if (isEmbed) {
     return (
-      <div
-        className="p-4"
-        style={{
-          background: "transparent",
-          overflow: "hidden",
-          color: "white",
-        }}
-      >
+      <div className="p-4" style={{ background: "transparent", overflow: "hidden", color: "white" }}>
         <div className="mb-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium">{currentMonthYear}</span>
-            <span className="text-sm">
-              {totalEvents} event{totalEvents !== 1 ? "s" : ""}
-            </span>
+            <span className="text-sm">{totalEvents} event{totalEvents !== 1 ? "s" : ""}</span>
           </div>
           <div className="flex items-center mt-2">
             <span className="text-sm mr-2">Less</span>
             {legendCounts.map((val, idx) => (
-              <div
-                key={idx}
-                className="w-4 h-4 mx-1"
-                style={{
-                  backgroundColor: getColor(val, darkMode),
-                  borderRadius: "2px",
-                }}
-              />
+              <div key={idx} className="w-4 h-4 mx-1" style={{ backgroundColor: getColor(val, darkMode), borderRadius: "2px" }} />
             ))}
             <span className="text-sm ml-2">More</span>
           </div>
@@ -240,9 +111,9 @@ export default function Home() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              fetchEvents();
+              fetchEvents(gitHubUsername, gitLabUsername);
               setAutoSyncEnabled(true);
-              updateEmbedCode();
+              updateEmbedCode(setEmbedCode, embedTheme, gitHubUsername, gitLabUsername);
             }}
             className="space-y-4 mt-8"
           >
@@ -329,7 +200,7 @@ export default function Home() {
             />
           </div>
           <button
-            onClick={handleCopy}
+            onClick={() => handleCopy(embedCode, setCopied)}
             className="mt-6 bg-green-500 text-white py-2 px-4 rounded cursor-pointer"
           >
             Copy iframe
