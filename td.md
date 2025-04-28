@@ -1,5 +1,5 @@
 1. pridat vic moznych params na generaci heatmapy
-   - interval: týdenní / měsíční
+   - interval: týdenní / měsíční (new look of the heatmap)
    - providers: GitHub, GitLab, Bitbucket…
    - events: commit, PR, merge, issue, comment
    - cell_size: malé/střední/velké
