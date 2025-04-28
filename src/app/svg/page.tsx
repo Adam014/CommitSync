@@ -26,7 +26,7 @@ export default function SVG() {
                 mode: embedTheme,
                 bg: bgColor,
               });
-              window.open(`/api/heatmap?${params.toString()}`, '_blank');
+              window.open(`/api/heatmap?${params.toString()}`, "_blank");
             }}
             className="space-y-4 mt-8"
           >

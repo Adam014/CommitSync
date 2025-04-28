@@ -16,7 +16,7 @@ export async function fetchEvents(
   githubUsername: string,
   gitlabUsername: string,
   year?: number,
-  month?: number
+  month?: number,
 ): Promise<Record<string, number>> {
   const now = new Date();
   const currentYear = year ?? now.getFullYear();
@@ -25,14 +25,24 @@ export async function fetchEvents(
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   for (let day = 1; day <= daysInMonth; day++) {
-    const dateKey = format(new Date(currentYear, currentMonth, day), "yyyy-MM-dd");
+    const dateKey = format(
+      new Date(currentYear, currentMonth, day),
+      "yyyy-MM-dd",
+    );
     eventsAggregate[dateKey] = 0;
   }
 
   if (githubUsername) {
     try {
       const firstDay = new Date(currentYear, currentMonth, 1).toISOString();
-      const lastDay = new Date(currentYear, currentMonth, daysInMonth, 23, 59, 59).toISOString();
+      const lastDay = new Date(
+        currentYear,
+        currentMonth,
+        daysInMonth,
+        23,
+        59,
+        59,
+      ).toISOString();
       const githubQuery = `author:${githubUsername} committer-date:${firstDay}..${lastDay}`;
       const ghRes = await fetch(
         `https://api.github.com/search/commits?q=${encodeURIComponent(githubQuery)}&per_page=100`,
@@ -73,7 +83,10 @@ export async function fetchEvents(
         const glEvents = await glEventsRes.json();
         (glEvents || []).forEach((event: GitLabCommit) => {
           const eventDate = new Date(event.created_at);
-          if (eventDate.getFullYear() === currentYear && eventDate.getMonth() === currentMonth) {
+          if (
+            eventDate.getFullYear() === currentYear &&
+            eventDate.getMonth() === currentMonth
+          ) {
             const dateKey = format(eventDate, "yyyy-MM-dd");
             if (dateKey in eventsAggregate) {
               eventsAggregate[dateKey] += 1;
@@ -89,7 +102,10 @@ export async function fetchEvents(
   return eventsAggregate;
 }
 
-export function handleCopy(embedCode: string, setCopied: (copied: boolean) => void) {
+export function handleCopy(
+  embedCode: string,
+  setCopied: (copied: boolean) => void,
+) {
   navigator.clipboard.writeText(embedCode);
   setCopied(true);
   setTimeout(() => setCopied(false), 2000);
@@ -99,7 +115,7 @@ export function updateEmbedCode(
   setEmbedCode: (code: string) => void,
   embedTheme: "light" | "dark",
   gitHubUsername: string,
-  gitLabUsername: string
+  gitLabUsername: string,
 ) {
   const origin = window.location.origin;
   const embedUrl =
@@ -114,13 +130,12 @@ export function updateEmbedCode(
        src="${embedUrl}"
        width="100%"
        height="300"
-       style="border:none; overflow:hidden; background:transparent;"
+       style="border:none; overflow:hidden; background: transparent;"
        scrolling="no"
        frameborder="0"
      ></iframe>`,
   );
 }
-
 
 export function getColor(count: number, darkMode: boolean): string {
   if (!darkMode) {
@@ -137,4 +152,3 @@ export function getColor(count: number, darkMode: boolean): string {
     return "#9C27B0";
   }
 }
-

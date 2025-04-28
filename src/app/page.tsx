@@ -10,8 +10,9 @@ import {
   legendCounts,
   getCurrentMonthYear,
   calculateTotalEvents,
-  getColor
+  getColor,
 } from "@/stores/utils";
+import Form from "@/components/Form";
 
 export default function Home() {
   const { darkMode, mounted, setMounted } = useTheme();
@@ -79,16 +80,32 @@ export default function Home() {
 
   if (isEmbed) {
     return (
-      <div className="p-4" style={{ background: "transparent", overflow: "hidden", color: "white" }}>
+      <div
+        className="p-4"
+        style={{
+          background: "transparent",
+          overflow: "hidden",
+          color: "white",
+        }}
+      >
         <div className="mb-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium">{currentMonthYear}</span>
-            <span className="text-sm">{totalEvents} event{totalEvents !== 1 ? "s" : ""}</span>
+            <span className="text-sm">
+              {totalEvents} event{totalEvents !== 1 ? "s" : ""}
+            </span>
           </div>
           <div className="flex items-center mt-2">
             <span className="text-sm mr-2">Less</span>
             {legendCounts.map((val, idx) => (
-              <div key={idx} className="w-4 h-4 mx-1" style={{ backgroundColor: getColor(val, darkMode), borderRadius: "2px" }} />
+              <div
+                key={idx}
+                className="w-4 h-4 mx-1"
+                style={{
+                  backgroundColor: getColor(val, darkMode),
+                  borderRadius: "2px",
+                }}
+              />
             ))}
             <span className="text-sm ml-2">More</span>
           </div>
@@ -108,75 +125,25 @@ export default function Home() {
           1.0 Generate iframe
         </h2>
         <div className="md:ml-12 ml-4 mr-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              fetchEvents(gitHubUsername, gitLabUsername);
+          <Form
+            gitHubUsername={gitHubUsername}
+            gitLabUsername={gitLabUsername}
+            setGitHubUsername={setGitHubUsername}
+            setGitLabUsername={setGitLabUsername}
+            embedTheme={embedTheme}
+            setEmbedTheme={setEmbedTheme}
+            loading={loading}
+            onSubmit={() => {
+              fetchEventsCallback();
               setAutoSyncEnabled(true);
-              updateEmbedCode(setEmbedCode, embedTheme, gitHubUsername, gitLabUsername);
+              updateEmbedCode(
+                setEmbedCode,
+                embedTheme,
+                gitHubUsername,
+                gitLabUsername,
+              );
             }}
-            className="space-y-4 mt-8"
-          >
-            <div>
-              <label htmlFor="github" className="block mb-1">
-                GitHub Username
-              </label>
-              <input
-                type="text"
-                id="github"
-                value={gitHubUsername}
-                onChange={(e) => setGitHubUsername(e.target.value)}
-                placeholder="Enter your GitHub username"
-                className="p-2 border border-gray-300 rounded w-full md:w-1/3"
-              />
-            </div>
-            <div>
-              <label htmlFor="gitlab" className="block mb-1">
-                GitLab Username
-              </label>
-              <input
-                type="text"
-                id="gitlab"
-                value={gitLabUsername}
-                onChange={(e) => setGitLabUsername(e.target.value)}
-                placeholder="Enter your GitLab username"
-                className="p-2 border border-gray-300 rounded w-full md:w-1/3"
-              />
-            </div>
-
-            <div className="flex items-center space-x-6 mt-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="embedTheme"
-                  value="light"
-                  checked={embedTheme === "light"}
-                  onChange={() => setEmbedTheme("light")}
-                  className="mr-2"
-                />
-                Light
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="embedTheme"
-                  value="dark"
-                  checked={embedTheme === "dark"}
-                  onChange={() => setEmbedTheme("dark")}
-                  className="mr-2"
-                />
-                Dark
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              className="bg-blue-500 text-white py-2 px-4 rounded cursor-pointer"
-              disabled={loading}
-            >
-              {loading ? "Fetching..." : "Fetch Events"}
-            </button>
-          </form>
+          />
           <Link href={"/svg"}>
             <p className="underline pt-4">2.0 Generate SVG</p>
           </Link>

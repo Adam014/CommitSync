@@ -6,7 +6,7 @@ import {
   legendCounts,
   getCurrentMonthYear,
   calculateTotalEvents,
-} from "@/stores/utils"; 
+} from "@/stores/utils";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -23,7 +23,12 @@ export async function GET(request: Request) {
   const currentMonth = now.getMonth();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-  const dayCounts = await fetchEvents(github, gitlab, currentYear, currentMonth);
+  const dayCounts = await fetchEvents(
+    github,
+    gitlab,
+    currentYear,
+    currentMonth,
+  );
   const totalEvents = calculateTotalEvents(dayCounts);
   const currentMonthYear = getCurrentMonthYear();
 
