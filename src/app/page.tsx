@@ -57,7 +57,13 @@ export default function Home() {
     if (params.get("embed") === "true") {
       fetchEventsCallback();
     }
-  }, [fetchEventsCallback, setMounted, setIsEmbed, setGitHubUsername, setGitLabUsername]);
+  }, [
+    fetchEventsCallback,
+    setMounted,
+    setIsEmbed,
+    setGitHubUsername,
+    setGitLabUsername,
+  ]);
 
   useEffect(() => {
     if (!autoSyncEnabled) return;

@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useStore } from "@/stores/store";
 
 export default function SVG() {
-  const [gitHubUsername, setGitHubUsername] = useState("");
-  const [gitLabUsername, setGitLabUsername] = useState("");
-  const [embedTheme, setEmbedTheme] = useState<"light" | "dark">("light");
-  const [bgColor, setBgColor] = useState<string>("#ffffff");
+  const {
+    gitHubUsername,
+    gitLabUsername,
+    embedTheme,
+    setGitHubUsername,
+    setGitLabUsername,
+    setEmbedTheme,
+    bgColor,
+    setBgColor,
+  } = useStore();
 
   return (
     <div className="text-center md:text-left">

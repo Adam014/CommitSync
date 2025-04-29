@@ -17,6 +17,7 @@ interface Store {
   embedCode: string;
   copied: boolean;
   embedTheme: "light" | "dark";
+  bgColor: string;
 
   setDayCounts: (counts: Record<string, number>) => void;
   setLoading: (loading: boolean) => void;
@@ -26,6 +27,7 @@ interface Store {
   setEmbedCode: (code: string) => void;
   setCopied: (copied: boolean) => void;
   setEmbedTheme: (theme: "light" | "dark") => void;
+  setBgColor: (color: string) => void;
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -45,6 +47,7 @@ export const useStore = create<Store>((set, get) => ({
   embedCode: "",
   copied: false,
   embedTheme: "light",
+  bgColor: "#ffffff",
 
   setDayCounts: (counts) => set({ dayCounts: counts }),
   setLoading: (loading) => set({ loading }),
@@ -54,4 +57,5 @@ export const useStore = create<Store>((set, get) => ({
   setEmbedCode: (code) => set({ embedCode: code }),
   setCopied: (copied) => set({ copied }),
   setEmbedTheme: (theme) => set({ embedTheme: theme }),
+  setBgColor: (color) => set({ bgColor: color }),
 }));
