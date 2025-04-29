@@ -1,34 +1,27 @@
-import { EmbedSlice, ThemeSlice } from './../types/types';
+// stores/useStore.ts
 import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
+import { createThemeSlice, ThemeSlice } from "./slices/ThemeSlice";
+import { createEmbedSlice, EmbedSlice } from "./slices/EmbedSlice";
 
-type Store = ThemeSlice & EmbedSlice;
+type StoreState = ThemeSlice & EmbedSlice;
 
-export const useStore = create<Store>((set, get) => ({
-  darkMode: false,
-  isEmbed: false,
-  mounted: false,
-  setDarkMode: (value) => set({ darkMode: value }),
-  toggleDarkMode: () => set({ darkMode: !get().darkMode }),
-  setIsEmbed: (value) => set({ isEmbed: value }),
-  setMounted: (value) => set({ mounted: value }),
-
-  dayCounts: {},
-  loading: false,
-  gitHubUsername: "",
-  gitLabUsername: "",
-  autoSyncEnabled: false,
-  embedCode: "",
-  copied: false,
-  embedTheme: "light",
-  bgColor: "#ffffff",
-
-  setDayCounts: (counts) => set({ dayCounts: counts }),
-  setLoading: (loading) => set({ loading }),
-  setGitHubUsername: (username) => set({ gitHubUsername: username }),
-  setGitLabUsername: (username) => set({ gitLabUsername: username }),
-  setAutoSyncEnabled: (enabled) => set({ autoSyncEnabled: enabled }),
-  setEmbedCode: (code) => set({ embedCode: code }),
-  setCopied: (copied) => set({ copied }),
-  setEmbedTheme: (theme) => set({ embedTheme: theme }),
-  setBgColor: (color) => set({ bgColor: color }),
-}));
+export const useStore = create<StoreState>()(
+  devtools(
+    persist(
+      (set, get, store) => ({
+        ...createThemeSlice(set, get, store),
+        ...createEmbedSlice(set, get, store),
+      }),
+      {
+        name: "commit-zustand",
+        partialize: (state) => ({
+          gitHubUsername: state.gitHubUsername,
+          gitLabUsername: state.gitLabUsername,
+          embedTheme: state.embedTheme,
+          bgColor: state.bgColor,
+        }),
+      }
+    )
+  )
+);
