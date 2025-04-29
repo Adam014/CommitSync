@@ -1,5 +1,5 @@
 import { HeatmapProps } from "../types/types";
-import { getColor } from "@/stores/utils";
+import { getColor } from "@/utils/utils";
 import { format, startOfMonth, getDaysInMonth } from "date-fns";
 import React from "react";
 

@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useCallback } from "react";
 import Heatmap from "@/components/Heatmap";
 import Link from "next/link";
-import { useTheme } from "@/components/ThemeProvider";
+import { useStore } from "@/stores/store";
 import {
   fetchEvents,
   handleCopy,
@@ -11,28 +11,40 @@ import {
   getCurrentMonthYear,
   calculateTotalEvents,
   getColor,
-} from "@/stores/utils";
+} from "@/utils/utils";
 import Form from "@/components/Form";
 
 export default function Home() {
-  const { darkMode, mounted, setMounted } = useTheme();
-
-  const [dayCounts, setDayCounts] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(false);
-  const [gitHubUsername, setGitHubUsername] = useState("");
-  const [gitLabUsername, setGitLabUsername] = useState("");
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
-  const [isEmbed, setIsEmbed] = useState(false);
-  const [embedCode, setEmbedCode] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [embedTheme, setEmbedTheme] = useState<"light" | "dark">("light");
+  const {
+    autoSyncEnabled,
+    setAutoSyncEnabled,
+    embedTheme,
+    setEmbedTheme,
+    setEmbedCode,
+    copied,
+    setCopied,
+    embedCode,
+    darkMode,
+    mounted,
+    setMounted,
+    gitHubUsername,
+    setGitHubUsername,
+    gitLabUsername,
+    setGitLabUsername,
+    dayCounts,
+    setDayCounts,
+    loading,
+    setLoading,
+    isEmbed,
+    setIsEmbed,
+  } = useStore();
 
   const fetchEventsCallback = useCallback(async () => {
     setLoading(true);
     const data = await fetchEvents(gitHubUsername, gitLabUsername);
     setDayCounts(data);
     setLoading(false);
-  }, [gitHubUsername, gitLabUsername]);
+  }, [gitHubUsername, gitLabUsername, setDayCounts, setLoading]);
 
   useEffect(() => {
     setMounted(true);
@@ -45,7 +57,7 @@ export default function Home() {
     if (params.get("embed") === "true") {
       fetchEventsCallback();
     }
-  }, [fetchEventsCallback, setMounted]);
+  }, [fetchEventsCallback, setMounted, setIsEmbed, setGitHubUsername, setGitLabUsername]);
 
   useEffect(() => {
     if (!autoSyncEnabled) return;

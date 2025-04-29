@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { format } from "date-fns";
-import { getColor } from "@/stores/utils";
+import { getColor } from "@/utils/utils";
 import {
   fetchEvents,
   legendCounts,
   getCurrentMonthYear,
   calculateTotalEvents,
-} from "@/stores/utils";
+} from "@/utils/utils";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

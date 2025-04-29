@@ -1,27 +1,10 @@
 "use client";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-  Dispatch,
-  SetStateAction,
-} from "react";
-
-interface ThemeContextType {
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-  mounted: boolean;
-  setMounted: Dispatch<SetStateAction<boolean>>;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+import { useEffect, ReactNode } from "react";
+import { useStore } from "@/stores/store";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [darkMode, setDarkMode] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [isEmbed, setIsEmbed] = useState(false);
+  const { darkMode, setDarkMode, isEmbed, setIsEmbed, mounted, setMounted } =
+    useStore();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -52,32 +35,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [darkMode, mounted]);
 
-  const toggleDarkMode = () => setDarkMode((prev) => !prev);
+  const toggleDarkMode = () => setDarkMode(!darkMode);
 
   return (
-    <ThemeContext.Provider
-      value={{ darkMode, toggleDarkMode, mounted, setMounted }}
-    >
-      <div className="bg-[var(--color-background)] text-[var(--color-foreground)] min-h-screen relative">
-        {/* → hide the toggle inside the iframe */}
-        {!isEmbed && (
-          <button
-            onClick={toggleDarkMode}
-            className="absolute top-2 left-2 py-2 px-3 rounded cursor-pointer"
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
-        )}
-        {children}
-      </div>
-    </ThemeContext.Provider>
+    <div className="bg-[var(--color-background)] text-[var(--color-foreground)] min-h-screen relative">
+      {/* → hide the toggle inside the iframe */}
+      {!isEmbed && (
+        <button
+          onClick={toggleDarkMode}
+          className="absolute top-2 left-2 py-2 px-3 rounded cursor-pointer"
+        >
+          {darkMode ? "☀️" : "🌙"}
+        </button>
+      )}
+      {children}
+    </div>
   );
-}
-
-export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return ctx;
 }
