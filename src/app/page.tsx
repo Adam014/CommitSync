@@ -2,7 +2,9 @@
 import React, { useEffect, useCallback } from "react";
 import Heatmap from "@/components/Heatmap";
 import Link from "next/link";
-import { useStore } from "@/stores/store";
+import { useTheme } from "@/stores/hooks/useTheme";
+import { useEmbed } from "@/stores/hooks/useEmbed";
+import { useHeatmap } from "@/stores/hooks/useHeatmap";
 import {
   fetchEvents,
   handleCopy,
@@ -15,29 +17,22 @@ import {
 import Form from "@/components/Form";
 
 export default function Home() {
+  const { darkMode, mounted, setMounted, isEmbed, setIsEmbed } = useTheme();
   const {
-    autoSyncEnabled,
-    setAutoSyncEnabled,
-    embedTheme,
-    setEmbedTheme,
-    setEmbedCode,
-    copied,
-    setCopied,
-    embedCode,
-    darkMode,
-    mounted,
-    setMounted,
     gitHubUsername,
     setGitHubUsername,
     gitLabUsername,
     setGitLabUsername,
-    dayCounts,
-    setDayCounts,
-    loading,
-    setLoading,
-    isEmbed,
-    setIsEmbed,
-  } = useStore();
+    embedTheme,
+    setEmbedTheme,
+    embedCode,
+    setEmbedCode,
+    autoSyncEnabled,
+    setAutoSyncEnabled,
+    copied,
+    setCopied,
+  } = useEmbed();
+  const { dayCounts, setDayCounts, loading, setLoading } = useHeatmap();
 
   const fetchEventsCallback = useCallback(async () => {
     setLoading(true);

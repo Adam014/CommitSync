@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useStore } from "@/stores/store";
+import { useEmbed } from "@/stores/hooks/useEmbed";
 
 export default function SVG() {
   const {
@@ -13,7 +13,7 @@ export default function SVG() {
     setEmbedTheme,
     bgColor,
     setBgColor,
-  } = useStore();
+  } = useEmbed();
 
   return (
     <div className="text-center md:text-left">
