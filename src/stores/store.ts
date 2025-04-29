@@ -1,4 +1,3 @@
-// stores/useStore.ts
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { createThemeSlice, ThemeSlice } from "./slices/ThemeSlice";
@@ -21,7 +20,7 @@ export const useStore = create<StoreState>()(
           embedTheme: state.embedTheme,
           bgColor: state.bgColor,
         }),
-      }
-    )
-  )
+      },
+    ),
+  ),
 );
