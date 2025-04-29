@@ -1,5 +1,3 @@
-import { Dispatch, SetStateAction } from "react";
-
 export interface HeatmapProps {
   dayCounts: Record<string, number>;
   darkMode: boolean;
@@ -17,9 +15,34 @@ export interface GitLabCommit {
   created_at: string;
 }
 
-export interface ThemeContextType {
+export interface ThemeSlice {
   darkMode: boolean;
-  toggleDarkMode: () => void;
+  isEmbed: boolean;
   mounted: boolean;
-  setMounted: Dispatch<SetStateAction<boolean>>;
+  setDarkMode: (value: boolean) => void;
+  toggleDarkMode: () => void;
+  setIsEmbed: (value: boolean) => void;
+  setMounted: (value: boolean) => void;
 }
+
+export interface EmbedSlice {
+  dayCounts: Record<string, number>;
+  loading: boolean;
+  gitHubUsername: string;
+  gitLabUsername: string;
+  autoSyncEnabled: boolean;
+  embedCode: string;
+  copied: boolean;
+  embedTheme: "light" | "dark";
+  bgColor: string;
+  setDayCounts: (counts: Record<string, number>) => void;
+  setLoading: (loading: boolean) => void;
+  setGitHubUsername: (username: string) => void;
+  setGitLabUsername: (username: string) => void;
+  setAutoSyncEnabled: (enabled: boolean) => void;
+  setEmbedCode: (code: string) => void;
+  setCopied: (copied: boolean) => void;
+  setEmbedTheme: (theme: "light" | "dark") => void;
+  setBgColor: (color: string) => void;
+}
+

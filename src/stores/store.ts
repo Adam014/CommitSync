@@ -1,34 +1,7 @@
+import { EmbedSlice, ThemeSlice } from './../types/types';
 import { create } from "zustand";
 
-interface Store {
-  darkMode: boolean;
-  isEmbed: boolean;
-  mounted: boolean;
-  setDarkMode: (value: boolean) => void;
-  toggleDarkMode: () => void;
-  setIsEmbed: (value: boolean) => void;
-  setMounted: (value: boolean) => void;
-
-  dayCounts: Record<string, number>;
-  loading: boolean;
-  gitHubUsername: string;
-  gitLabUsername: string;
-  autoSyncEnabled: boolean;
-  embedCode: string;
-  copied: boolean;
-  embedTheme: "light" | "dark";
-  bgColor: string;
-
-  setDayCounts: (counts: Record<string, number>) => void;
-  setLoading: (loading: boolean) => void;
-  setGitHubUsername: (username: string) => void;
-  setGitLabUsername: (username: string) => void;
-  setAutoSyncEnabled: (enabled: boolean) => void;
-  setEmbedCode: (code: string) => void;
-  setCopied: (copied: boolean) => void;
-  setEmbedTheme: (theme: "light" | "dark") => void;
-  setBgColor: (color: string) => void;
-}
+type Store = ThemeSlice & EmbedSlice;
 
 export const useStore = create<Store>((set, get) => ({
   darkMode: false,
