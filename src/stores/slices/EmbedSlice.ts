@@ -1,4 +1,5 @@
 import { StateCreator } from "zustand";
+import { StoreState } from "../store";
 
 export interface EmbedSlice {
   dayCounts: Record<string, number>;
@@ -20,11 +21,10 @@ export interface EmbedSlice {
   setCopied: (copied: boolean) => void;
   setEmbedTheme: (theme: "light" | "dark") => void;
   setBgColor: (color: string) => void;
+  resetEmbed: () => void; // NEW
 }
 
-export const createEmbedSlice: StateCreator<EmbedSlice, [], [], EmbedSlice> = (
-  set,
-) => ({
+export const createEmbedSlice: StateCreator<StoreState, [], [], EmbedSlice> = (set) => ({
   dayCounts: {},
   loading: false,
   gitHubUsername: "",
@@ -35,13 +35,25 @@ export const createEmbedSlice: StateCreator<EmbedSlice, [], [], EmbedSlice> = (
   embedTheme: "light",
   bgColor: "#ffffff",
 
-  setDayCounts: (counts: Record<string, number>) => set({ dayCounts: counts }),
-  setLoading: (loading: boolean) => set({ loading }),
-  setGitHubUsername: (username: string) => set({ gitHubUsername: username }),
-  setGitLabUsername: (username: string) => set({ gitLabUsername: username }),
-  setAutoSyncEnabled: (enabled: boolean) => set({ autoSyncEnabled: enabled }),
-  setEmbedCode: (code: string) => set({ embedCode: code }),
-  setCopied: (copied: boolean) => set({ copied }),
-  setEmbedTheme: (theme: "light" | "dark") => set({ embedTheme: theme }),
-  setBgColor: (color: string) => set({ bgColor: color }),
+  setDayCounts: (counts) => set({ dayCounts: counts }),
+  setLoading: (loading) => set({ loading }),
+  setGitHubUsername: (username) => set({ gitHubUsername: username }),
+  setGitLabUsername: (username) => set({ gitLabUsername: username }),
+  setAutoSyncEnabled: (enabled) => set({ autoSyncEnabled: enabled }),
+  setEmbedCode: (code) => set({ embedCode: code }),
+  setCopied: (copied) => set({ copied }),
+  setEmbedTheme: (theme) => set({ embedTheme: theme }),
+  setBgColor: (color) => set({ bgColor: color }),
+  resetEmbed: () =>
+    set({
+      dayCounts: {},
+      loading: false,
+      gitHubUsername: "",
+      gitLabUsername: "",
+      autoSyncEnabled: false,
+      embedCode: "",
+      copied: false,
+      embedTheme: "light",
+      bgColor: "#ffffff",
+    }),
 });

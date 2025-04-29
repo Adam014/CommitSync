@@ -8,6 +8,7 @@ export interface ThemeSlice {
   toggleDarkMode: () => void;
   setIsEmbed: (value: boolean) => void;
   setMounted: (value: boolean) => void;
+  resetTheme: () => void;
 }
 
 export const createThemeSlice: StateCreator<ThemeSlice, [], [], ThemeSlice> = (
@@ -21,4 +22,10 @@ export const createThemeSlice: StateCreator<ThemeSlice, [], [], ThemeSlice> = (
   toggleDarkMode: () => set({ darkMode: !get().darkMode }),
   setIsEmbed: (value) => set({ isEmbed: value }),
   setMounted: (value) => set({ mounted: value }),
+  resetTheme: () =>
+    set({
+      darkMode: false,
+      isEmbed: false,
+      mounted: false,
+    }),
 });

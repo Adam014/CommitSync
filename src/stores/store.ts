@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 import { createThemeSlice, ThemeSlice } from "./slices/ThemeSlice";
 import { createEmbedSlice, EmbedSlice } from "./slices/EmbedSlice";
 
-type StoreState = ThemeSlice & EmbedSlice;
+export type StoreState = ThemeSlice & EmbedSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
