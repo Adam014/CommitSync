@@ -1,12 +1,13 @@
 import { useStore } from "@/stores/store";
 
-export const useTheme = () =>
-  useStore((state) => ({
-    darkMode: state.darkMode,
-    toggleDarkMode: state.toggleDarkMode,
-    isEmbed: state.isEmbed,
-    mounted: state.mounted,
-    setDarkMode: state.setDarkMode,
-    setIsEmbed: state.setIsEmbed,
-    setMounted: state.setMounted,
-  }));
+export const useTheme = () => {
+  return {
+    darkMode: useStore((s) => s.darkMode),
+    toggleDarkMode: useStore((s) => s.toggleDarkMode),
+    isEmbed: useStore((s) => s.isEmbed),
+    mounted: useStore((s) => s.mounted),
+    setDarkMode: useStore((s) => s.setDarkMode),
+    setIsEmbed: useStore((s) => s.setIsEmbed),
+    setMounted: useStore((s) => s.setMounted),
+  };
+};
