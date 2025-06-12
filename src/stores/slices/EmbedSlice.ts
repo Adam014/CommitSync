@@ -24,7 +24,9 @@ export interface EmbedSlice {
   resetEmbed: () => void; // NEW
 }
 
-export const createEmbedSlice: StateCreator<StoreState, [], [], EmbedSlice> = (set) => ({
+export const createEmbedSlice: StateCreator<StoreState, [], [], EmbedSlice> = (
+  set,
+) => ({
   dayCounts: {},
   loading: false,
   gitHubUsername: "",

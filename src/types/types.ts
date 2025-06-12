@@ -15,6 +15,6 @@ export interface GitLabCommit {
   created_at: string;
 }
 
-export interface GitHubPrItem{
+export interface GitHubPrItem {
   created_at: string;
 }
