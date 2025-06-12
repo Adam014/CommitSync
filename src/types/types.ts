@@ -14,3 +14,7 @@ export interface GitHubCommit {
 export interface GitLabCommit {
   created_at: string;
 }
+
+export interface GitHubPrItem{
+  created_at: string;
+}

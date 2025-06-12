@@ -1,6 +1,6 @@
 // utils.ts
 import { format } from "date-fns";
-import { GitHubCommit, GitLabCommit } from "@/types/types";
+import { GitHubCommit, GitLabCommit, GitHubPrItem } from "@/types/types";
 
 export const legendCounts = [0, 1, 3, 6, 10];
 
@@ -27,7 +27,7 @@ export async function fetchEvents(
   for (let day = 1; day <= daysInMonth; day++) {
     const dateKey = format(
       new Date(currentYear, currentMonth, day),
-      "yyyy-MM-dd",
+      "yyyy-MM-dd"
     );
     eventsAggregate[dateKey] = 0;
   }
@@ -41,28 +41,54 @@ export async function fetchEvents(
         daysInMonth,
         23,
         59,
-        59,
+        59
       ).toISOString();
-      const githubQuery = `author:${githubUsername} committer-date:${firstDay}..${lastDay}`;
-      const ghRes = await fetch(
-        `https://api.github.com/search/commits?q=${encodeURIComponent(githubQuery)}&per_page=100`,
+
+      // Fetch commits
+      const githubCommitQuery = `author:${githubUsername} committer-date:${firstDay}..${lastDay}`;
+      const ghCommitRes = await fetch(
+        `https://api.github.com/search/commits?q=${encodeURIComponent(
+          githubCommitQuery
+        )}&per_page=100`,
         {
           headers: {
             Accept: "application/vnd.github.cloak-preview",
             Authorization: `token ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
           },
-        },
+        }
       );
-      const ghData = await ghRes.json();
-      (ghData.items || []).forEach((commit: GitHubCommit) => {
+      const ghCommitData = await ghCommitRes.json();
+      (ghCommitData.items || []).forEach((commit: GitHubCommit) => {
         const commitDate = new Date(commit.commit.author.date);
         const dateKey = format(commitDate, "yyyy-MM-dd");
         if (dateKey in eventsAggregate) {
           eventsAggregate[dateKey] += 1;
         }
       });
+
+      // Fetch PR creations
+      const githubPrQuery = `type:pr author:${githubUsername} created:${firstDay}..${lastDay}`;
+      const ghPrRes = await fetch(
+        `https://api.github.com/search/issues?q=${encodeURIComponent(
+          githubPrQuery
+        )}&per_page=100`,
+        {
+          headers: {
+            Accept: "application/vnd.github.v3+json",
+            Authorization: `token ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+          },
+        }
+      );
+      const ghPrData = await ghPrRes.json();
+      (ghPrData.items || []).forEach((pr: GitHubPrItem) => {
+        const prDate = new Date(pr.created_at);
+        const dateKey = format(prDate, "yyyy-MM-dd");
+        if (dateKey in eventsAggregate) {
+          eventsAggregate[dateKey] += 1;
+        }
+      });
     } catch (err) {
-      console.error("Error fetching GitHub commits:", err);
+      console.error("Error fetching GitHub commits or PRs:", err);
     }
   }
 
@@ -71,14 +97,14 @@ export async function fetchEvents(
       const gitlabToken = process.env.NEXT_PUBLIC_GITLAB_TOKEN;
       const glUserRes = await fetch(
         `https://gitlab.com/api/v4/users?username=${gitlabUsername}`,
-        { headers: { "Private-Token": gitlabToken } },
+        { headers: { "Private-Token": gitlabToken } }
       );
       const glUsers = await glUserRes.json();
       if (Array.isArray(glUsers) && glUsers.length > 0) {
         const userId = glUsers[0].id;
         const glEventsRes = await fetch(
           `https://gitlab.com/api/v4/users/${userId}/events?per_page=100`,
-          { headers: { "Private-Token": gitlabToken } },
+          { headers: { "Private-Token": gitlabToken } }
         );
         const glEvents = await glEventsRes.json();
         (glEvents || []).forEach((event: GitLabCommit) => {
